@@ -2,7 +2,7 @@
 import type { NextPage } from 'next';
 import Head from 'next/head';
 import { SeatProvider } from './seatContext';
-import SeatMap from '../components/Seatmap';
+import SeatMap from './Seatmap';
 
 const Home: NextPage = () => {
   return (
