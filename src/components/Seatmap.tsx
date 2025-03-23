@@ -1,65 +1,68 @@
-import React, { useState } from 'react';
-import { demoStadium, Section, Seat, SeatStatus } from './types';
+'use client';
 
-const SeatMap = () => {
-  const [selectedSection, setSelectedSection] = useState<Section | null>(null);
-  const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
-  
-  const handleSectionClick = (section: Section) => {
-    setSelectedSection(section);
-  };
-  
-  const handleSeatClick = (seat: Seat) => {
-    if (seat.status !== 'available') return;
-    
-    const isSeatSelected = selectedSeats.some(s => s.id === seat.id);
-    
-    if (isSeatSelected) {
-      setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
-    } else {
-      setSelectedSeats([...selectedSeats, seat]);
-    }
-  };
-  
-  const getSeatStatus = (seat: Seat): SeatStatus => {
-    if (selectedSeats.some(s => s.id === seat.id)) {
-      return 'selected';
-    }
-    return seat.status;
-  };
-  
+import React from 'react';
+import { useSeatContext } from '../context/SeatContext';
+import { Section, Seat, SeatStatus, demoStadium } from '../types/stadium';
+
+const SeatMap: React.FC = () => {
+  const { 
+    selectedEvent, 
+    selectedSection, 
+    selectedSeats, 
+    setSelectedSection, 
+    toggleSeatSelection, 
+    getSeatStatus,
+    proceedToCheckout,
+    selectionStep
+  } = useSeatContext();
+
+  if (!selectedEvent || selectionStep === 'count') {
+    return null;
+  }
+
+  // Use the venue from the selected event, or fall back to the demo stadium
+  // This ensures we always have a valid venue object
+  const venue = selectedEvent.venueMap || demoStadium;
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 p-4">
-      <h1 className="text-2xl font-bold mb-4">Demo Stadium Seat Map</h1>
-      
-      {!selectedSection ? (
-        <VenueOverview 
-          venue={demoStadium} 
-          onSectionClick={handleSectionClick} 
-        />
-      ) : (
-        <div className="flex flex-col space-y-4">
-          <button 
-            onClick={() => setSelectedSection(null)}
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded w-fit"
-          >
-            ← Back to overview
-          </button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
+            <button 
+              onClick={() => setSelectedSection(null)} 
+              className="text-gray-500 hover:text-gray-700"
+              type="button"
+            >
+              &times;
+            </button>
+          </div>
           
-          <SectionDetail 
-            section={selectedSection} 
-            onSeatClick={handleSeatClick}
-            getSeatStatus={getSeatStatus}
-          />
+          {selectionStep === 'section' && (
+            <VenueOverview 
+              venue={venue} 
+              onSectionClick={setSelectedSection} 
+            />
+          )}
           
-          {selectedSeats.length > 0 && (
+          {selectionStep === 'seat' && selectedSection && (
+            <SectionDetail 
+              section={selectedSection} 
+              onSeatClick={toggleSeatSelection}
+              getSeatStatus={getSeatStatus}
+            />
+          )}
+          
+          {(selectionStep === 'checkout' || selectionStep === 'seat' && selectedSeats.length > 0) && (
             <SeatSelection 
               selectedSeats={selectedSeats} 
-              onRemoveSeat={(seat) => handleSeatClick(seat)}
+              onRemoveSeat={toggleSeatSelection}
+              onCheckout={proceedToCheckout}
             />
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };
@@ -68,31 +71,40 @@ const VenueOverview = ({
   venue, 
   onSectionClick 
 }: { 
-  venue: typeof demoStadium, 
+  venue: any, 
   onSectionClick: (section: Section) => void 
 }) => {
+  // Safely check that venue and sections exist
+  if (!venue || !venue.sections || !Array.isArray(venue.sections)) {
+    return (
+      <div className="flex flex-col items-center">
+        <h2 className="text-xl mb-6">No sections available</h2>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center">
-      <h2 className="text-xl mb-6">Select a section to view seats</h2>
+      <h2 className="text-xl mb-6">Select a section</h2>
       
-      <div className="w-full max-w-2xl aspect-video bg-gray-200 rounded-lg relative">
-        {/* Stadium visualization */}
+      <div className="w-full max-w-2xl aspect-video bg-gray-200 rounded-lg relative mb-8">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="w-3/4 h-1/2 border-2 border-gray-400 rounded-lg bg-gray-100 flex">
-            {venue.sections.map((section) => (
+            {venue.sections.map((section: Section) => (
               <div
                 key={section.id}
-                className="flex-1 border-r last:border-r-0 border-gray-400 hover:bg-blue-100 cursor-pointer transition-colors flex items-center justify-center"
+                className="flex-1 border-r last:border-r-0 border-gray-400 hover:bg-blue-100 cursor-pointer transition-colors flex flex-col items-center justify-center p-2"
                 onClick={() => onSectionClick(section)}
               >
                 <span className="font-medium">{section.name}</span>
+                <span className="text-sm text-gray-600">${section.price}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
       
-      <div className="mt-6 text-center text-gray-600">
+      <div className="text-center text-gray-600">
         Click on a section to view and select seats
       </div>
     </div>
@@ -109,7 +121,7 @@ const SectionDetail = ({
   getSeatStatus: (seat: Seat) => SeatStatus
 }) => {
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg">
       <h2 className="text-xl font-semibold mb-4">{section.name} - Select Your Seats</h2>
       
       {section.viewImageUrl && (
@@ -147,6 +159,7 @@ const SectionDetail = ({
                       onClick={() => onSeatClick(seat)}
                       disabled={status !== 'available' && status !== 'selected'}
                       title={`Row ${row.name}, Seat ${seat.number} - ${status}`}
+                      type="button"
                     >
                       {seat.number}
                     </button>
@@ -182,15 +195,17 @@ const SectionDetail = ({
 
 const SeatSelection = ({ 
   selectedSeats,
-  onRemoveSeat 
+  onRemoveSeat,
+  onCheckout
 }: { 
   selectedSeats: Seat[],
-  onRemoveSeat: (seat: Seat) => void
+  onRemoveSeat: (seat: Seat) => void,
+  onCheckout: () => void
 }) => {
   const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
   
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-lg mt-8 border-t pt-6">
       <h2 className="text-xl font-semibold mb-4">Selected Seats</h2>
       
       {selectedSeats.length === 0 ? (
@@ -206,6 +221,7 @@ const SeatSelection = ({
                   <button 
                     onClick={() => onRemoveSeat(seat)}
                     className="text-red-500 hover:text-red-700"
+                    type="button"
                   >
                     Remove
                   </button>
@@ -219,7 +235,11 @@ const SeatSelection = ({
             <span>${totalPrice}</span>
           </div>
           
-          <button className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded">
+          <button 
+            onClick={onCheckout}
+            className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
+            type="button"
+          >
             Proceed to Checkout
           </button>
         </>

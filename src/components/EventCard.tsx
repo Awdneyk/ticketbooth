@@ -1,61 +1,83 @@
+'use client';
+
 import React from 'react';
 import { Event } from '../types/events';
+import { useSeatContext } from '../context/SeatContext';
 
 interface EventCardProps {
   event: Event;
   onClick: (eventId: string) => void;
 }
 
-const EventCard = ({ event, onClick }: EventCardProps) => {
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const options: Intl.DateTimeFormatOptions = { 
-      weekday: 'short', 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    };
-    return new Date(dateString).toLocaleDateString('en-US', options);
+const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
+  const { setSelectedEvent, resetSelections } = useSeatContext();
+  
+  const handleClick = () => {
+    // First reset any existing selections
+    resetSelections();
+    
+    // Set this as the selected event
+    setSelectedEvent(event);
+    
+    // Call the parent's onClick handler
+    onClick(event.id);
   };
-
+  
+  // Format the date in a consistent way that works on both server and client
+  // Avoid using toLocaleDateString which can cause hydration errors
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = days[date.getUTCDay()];
+    const monthName = months[date.getUTCMonth()];
+    const day = date.getUTCDate();
+    const year = date.getUTCFullYear();
+    
+    return `${dayName}, ${monthName} ${day}, ${year}`;
+  };
+  
+  const formattedDate = formatDate(event.date);
+  
   return (
     <div 
-      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
-      onClick={() => onClick(event.id)}
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={handleClick}
     >
-      <div className="h-48 bg-gray-200">
+      <div className="h-48 bg-gray-200 relative">
         <img 
           src={event.imageUrl} 
-          alt={event.title}
+          alt={event.title} 
           className="w-full h-full object-cover"
         />
+        <div className="absolute top-0 right-0 bg-blue-600 text-white px-3 py-1 text-sm font-semibold">
+          {event.category}
+        </div>
       </div>
+      
       <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-800 truncate">{event.title}</h3>
-          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded capitalize">
-            {event.category}
-          </span>
+        <h3 className="text-lg font-semibold mb-1 truncate">{event.title}</h3>
+        
+        <div className="flex items-center text-gray-600 mb-2">
+          <span className="text-sm">{formattedDate} • {event.time}</span>
         </div>
-        <p className="text-sm text-gray-500 mb-3 line-clamp-2">{event.description}</p>
-        <div className="flex items-center text-sm text-gray-600 mb-1">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-          </svg>
-          <span>{formatDate(event.date)} • {event.time}</span>
+        
+        <div className="text-sm text-gray-500 mb-3">
+          <div>{event.venue}</div>
+          <div>{event.location}</div>
         </div>
-        <div className="flex items-center text-sm text-gray-600 mb-3">
-          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-          </svg>
-          <span>{event.venue}, {event.location}</span>
-        </div>
+        
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-700">
-            ${event.price.min} - ${event.price.max}
-          </span>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1 rounded">
+          <div className="font-semibold text-gray-900">
+            {event.price.min === event.price.max 
+              ? `$${event.price.min}` 
+              : `$${event.price.min} - $${event.price.max}`}
+          </div>
+          <button 
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+            type="button"
+          >
             Get Tickets
           </button>
         </div>
