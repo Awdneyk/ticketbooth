@@ -14,12 +14,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
   const { setSelectedEvent, resetSelections } = useSeatContext();
   const [showDropdown, setShowDropdown] = useState(false);
   
-  const handleClick = () => {
-    // Toggle dropdown menu instead of immediately selecting
-    setShowDropdown(!showDropdown);
-  };
-  
-  const handleSelectEvent = () => {
+  // Handle clicking on the "Get Tickets" button
+  const handleGetTickets = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent the card click from triggering
+    
     // First reset any existing selections
     resetSelections();
     
@@ -29,8 +27,13 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
     // Call the parent's onClick handler
     onClick(event.id);
     
-    // Hide dropdown
+    // Hide dropdown if open
     setShowDropdown(false);
+  };
+  
+  // Handle clicking on the card to toggle dropdown
+  const handleCardClick = () => {
+    setShowDropdown(!showDropdown);
   };
   
   // Format the date using our formatter
@@ -40,7 +43,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
       <div 
         className="cursor-pointer"
-        onClick={handleClick}
+        onClick={handleCardClick}
       >
         <div className="h-48 bg-gray-200 relative">
           <img 
@@ -72,8 +75,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
                 : `$${event.price.min} - $${event.price.max}`}
             </div>
             <button 
+              onClick={handleGetTickets}
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
               type="button"
+              suppressHydrationWarning
             >
               Get Tickets
             </button>
@@ -89,7 +94,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
             <ul className="space-y-2">
               <li>
                 <button 
-                  onClick={handleSelectEvent}
+                  onClick={handleGetTickets}
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded transition-colors"
                   type="button"
                 >
@@ -98,7 +103,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
               </li>
               <li>
                 <button 
-                  onClick={handleSelectEvent}
+                  onClick={handleGetTickets}
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded transition-colors"
                   type="button"
                 >
@@ -107,7 +112,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick }) => {
               </li>
               <li>
                 <button 
-                  onClick={handleSelectEvent}
+                  onClick={handleGetTickets}
                   className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded transition-colors"
                   type="button"
                 >
