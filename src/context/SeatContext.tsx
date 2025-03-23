@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { Event } from '../types/events';
 import { Section, Seat, SeatStatus } from '../types/stadium';
 
@@ -17,6 +17,7 @@ interface SeatContextProps {
   isAvailable: (seatId: string) => boolean;
   getSeatStatus: (seat: Seat) => SeatStatus;
   proceedToCheckout: () => void;
+  goBack: () => void;
   selectionStep: 'count' | 'section' | 'seat' | 'checkout' | 'complete';
 }
 
@@ -35,10 +36,10 @@ export const SeatProvider = ({ children }: { children: ReactNode }) => {
     // Example of some unavailable seats
     'A1-1': true,
     'A1-2': true,
-    'B3-10': true,
+    'B3-4': true,
     'C2-5': true,
-    'D1-15': true,
-    'E4-7': true,
+    'D1-3': true,
+    'E4-2': true,
   });
 
   const isAvailable = (seatId: string) => {
@@ -80,19 +81,36 @@ export const SeatProvider = ({ children }: { children: ReactNode }) => {
     return 'available';
   };
 
-  const resetSelections = () => {
+  const resetSelections = useCallback(() => {
     setSelectedTicketCount(null);
     setSelectedSection(null);
     setSelectedSeats([]);
+    setSelectedEvent(null);
     setSelectionStep('count');
-  };
+  }, []);
 
-  const proceedToCheckout = () => {
+  // Go back to previous step
+  const goBack = useCallback(() => {
+    if (selectionStep === 'complete') {
+      setSelectionStep('checkout');
+    } else if (selectionStep === 'checkout') {
+      setSelectionStep('seat');
+    } else if (selectionStep === 'seat') {
+      setSelectionStep('section');
+      setSelectedSection(null);
+    } else if (selectionStep === 'section') {
+      setSelectionStep('count');
+      setSelectedTicketCount(null);
+    } else if (selectionStep === 'count') {
+      resetSelections();
+    }
+  }, [selectionStep, resetSelections]);
+
+  const proceedToCheckout = useCallback(() => {
     // In a real app, this would navigate to the checkout page
-    alert('Proceeding to checkout! Selected seats: ' + 
-      selectedSeats.map(seat => `${seat.row}-${seat.number}`).join(', '));
+    // For our demo, we'll just show a thank you message
     setSelectionStep('complete');
-  };
+  }, []);
 
   // Update selection step when state changes
   React.useEffect(() => {
@@ -120,6 +138,7 @@ export const SeatProvider = ({ children }: { children: ReactNode }) => {
     isAvailable,
     getSeatStatus,
     proceedToCheckout,
+    goBack,
     selectionStep
   };
 

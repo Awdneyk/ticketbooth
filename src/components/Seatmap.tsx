@@ -13,6 +13,7 @@ const SeatMap: React.FC = () => {
     toggleSeatSelection, 
     getSeatStatus,
     proceedToCheckout,
+    goBack,
     selectionStep
   } = useSeatContext();
 
@@ -25,15 +26,16 @@ const SeatMap: React.FC = () => {
   const venue = selectedEvent.venueMap || demoStadium;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-up">
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold">{selectedEvent.title}</h2>
             <button 
-              onClick={() => setSelectedSection(null)} 
+              onClick={goBack} 
               className="text-gray-500 hover:text-gray-700"
               type="button"
+              aria-label="Go back"
             >
               &times;
             </button>
@@ -59,6 +61,7 @@ const SeatMap: React.FC = () => {
               selectedSeats={selectedSeats} 
               onRemoveSeat={toggleSeatSelection}
               onCheckout={proceedToCheckout}
+              onGoBack={goBack}
             />
           )}
         </div>
@@ -155,7 +158,7 @@ const SectionDetail = ({
                         status === 'selected' ? 'bg-blue-600 text-white' :
                         status === 'reserved' ? 'bg-yellow-500 cursor-not-allowed' :
                         'bg-gray-400 cursor-not-allowed'
-                      }`}
+                      } transition-colors`}
                       onClick={() => onSeatClick(seat)}
                       disabled={status !== 'available' && status !== 'selected'}
                       title={`Row ${row.name}, Seat ${seat.number} - ${status}`}
@@ -196,11 +199,13 @@ const SectionDetail = ({
 const SeatSelection = ({ 
   selectedSeats,
   onRemoveSeat,
-  onCheckout
+  onCheckout,
+  onGoBack
 }: { 
   selectedSeats: Seat[],
   onRemoveSeat: (seat: Seat) => void,
-  onCheckout: () => void
+  onCheckout: () => void,
+  onGoBack: () => void
 }) => {
   const totalPrice = selectedSeats.reduce((sum, seat) => sum + seat.price, 0);
   
@@ -220,7 +225,7 @@ const SeatSelection = ({
                   <span className="mr-4">${seat.price}</span>
                   <button 
                     onClick={() => onRemoveSeat(seat)}
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 transition-colors"
                     type="button"
                   >
                     Remove
@@ -235,13 +240,23 @@ const SeatSelection = ({
             <span>${totalPrice}</span>
           </div>
           
-          <button 
-            onClick={onCheckout}
-            className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
-            type="button"
-          >
-            Proceed to Checkout
-          </button>
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <button 
+              onClick={onGoBack}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded transition-colors"
+              type="button"
+            >
+              Back
+            </button>
+            
+            <button 
+              onClick={onCheckout}
+              className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors"
+              type="button"
+            >
+              Proceed to Checkout
+            </button>
+          </div>
         </>
       )}
     </div>

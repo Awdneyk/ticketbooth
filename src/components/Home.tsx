@@ -5,15 +5,37 @@ import { events, getUniqueLocations, Event } from '../types/events';
 import EventCard from '../components/EventCard';
 import TicketCounter from '../components/TicketCounter';
 import SeatMap from '../components/SeatMap';
+import NonSeatedCheckout from '../components/NonSeatedCheckout';
+import ThankYou from '../components/ThankYou';
 import { SeatProvider, useSeatContext } from '../context/SeatContext';
+
+// Add animations to global CSS
+const animationStyles = `
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+`;
 
 const EventSelection = () => {
   const { 
     selectedEvent, 
     selectedTicketCount, 
     selectionStep,
-    resetSelections,
-    proceedToCheckout
+    resetSelections
   } = useSeatContext();
   
   if (!selectedEvent) return null;
@@ -22,57 +44,24 @@ const EventSelection = () => {
   
   return (
     <>
-      {/* First dropdown: How many tickets? */}
+      {/* Step 1: How many tickets? */}
       {selectionStep === 'count' && (
         <TicketCounter maxTickets={maxTickets} />
       )}
       
-      {/* Second dropdown: Select seats (only if the venue has seating) */}
-      {selectedTicketCount !== null && selectedEvent.hasSeating && (
+      {/* Step 2: Select seats (only if the venue has seating) */}
+      {selectedTicketCount !== null && selectedEvent.hasSeating && selectionStep !== 'complete' && (
         <SeatMap />
       )}
       
       {/* For non-seating events, show a simple checkout after selecting count */}
       {selectedTicketCount !== null && !selectedEvent.hasSeating && selectionStep === 'section' && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">{selectedEvent.title}</h2>
-              <button 
-                onClick={resetSelections} 
-                className="text-gray-500 hover:text-gray-700"
-                type="button"
-              >
-                &times;
-              </button>
-            </div>
-            
-            <p className="mb-4">You've selected {selectedTicketCount} ticket{selectedTicketCount !== 1 ? 's' : ''}.</p>
-            
-            <div className="border-t border-b py-4 my-4">
-              <div className="flex justify-between mb-2">
-                <span>Tickets ({selectedTicketCount} x ${selectedEvent.price.min})</span>
-                <span>${selectedEvent.price.min * selectedTicketCount}</span>
-              </div>
-              <div className="flex justify-between mb-2">
-                <span>Service Fee</span>
-                <span>${Math.floor(selectedEvent.price.min * selectedTicketCount * 0.15)}</span>
-              </div>
-              <div className="flex justify-between font-bold mt-4">
-                <span>Total</span>
-                <span>${Math.floor(selectedEvent.price.min * selectedTicketCount * 1.15)}</span>
-              </div>
-            </div>
-            
-            <button 
-              onClick={proceedToCheckout}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded"
-              type="button"
-            >
-              Proceed to Checkout
-            </button>
-          </div>
-        </div>
+        <NonSeatedCheckout />
+      )}
+      
+      {/* Thank you page after checkout */}
+      {selectionStep === 'complete' && (
+        <ThankYou />
       )}
     </>
   );
@@ -83,6 +72,23 @@ const Home = () => {
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Add animation styles to the document once
+  useEffect(() => {
+    if (!document.getElementById('animation-styles')) {
+      const styleElement = document.createElement('style');
+      styleElement.id = 'animation-styles';
+      styleElement.textContent = animationStyles;
+      document.head.appendChild(styleElement);
+      
+      return () => {
+        const element = document.getElementById('animation-styles');
+        if (element) {
+          element.remove();
+        }
+      };
+    }
+  }, []);
   
   const locations = getUniqueLocations();
   
@@ -180,7 +186,7 @@ const Home = () => {
               <div className="self-end">
                 <button 
                   onClick={resetFilters}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                   type="button"
                 >
                   Reset Filters
