@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { events, getUniqueLocations, Event } from '../types/events';
 import EventCard from '../components/EventCard';
 import TicketCounter from '../components/TicketCounter';
-import SeatMap from '../components/SeatMap';
+import SeatMap from './SeatMap';
 import NonSeatedCheckout from '../components/NonSeatedCheckout';
 import ThankYou from '../components/ThankYou';
 import { SeatProvider, useSeatContext } from '../context/SeatContext';
