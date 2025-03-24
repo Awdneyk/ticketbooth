@@ -35,7 +35,7 @@ const EventSelection = () => {
     selectedEvent, 
     selectedTicketCount, 
     selectionStep,
-    resetSelections
+    // resetSelections
   } = useSeatContext();
   
   if (!selectedEvent) return null;

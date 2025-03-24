@@ -74,7 +74,12 @@ const VenueOverview = ({
   venue, 
   onSectionClick 
 }: { 
-  venue: any, 
+  venue: {
+    id: string;
+    name: string;
+    sections: Section[];
+    mapImageUrl?: string;
+  }, 
   onSectionClick: (section: Section) => void 
 }) => {
   // Safely check that venue and sections exist

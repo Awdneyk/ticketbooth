@@ -8,7 +8,7 @@ const NonSeatedCheckout: React.FC = () => {
   const { 
     selectedEvent, 
     selectedTicketCount, 
-    resetSelections, 
+    // resetSelections, 
     proceedToCheckout,
     goBack
   } = useSeatContext();
@@ -35,7 +35,7 @@ const NonSeatedCheckout: React.FC = () => {
           </button>
         </div>
         
-        <p className="mb-4">You've selected {selectedTicketCount} ticket{selectedTicketCount !== 1 ? 's' : ''}.</p>
+        <p className="mb-4">You&apos;ve selected {selectedTicketCount} ticket{selectedTicketCount !== 1 ? 's' : ''}.</p>
         
         <div className="border-t border-b py-4 my-4">
           <div className="flex justify-between mb-2">
